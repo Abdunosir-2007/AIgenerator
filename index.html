@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
+    <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- MANA SHU TEGNI QO'SHASIZ: -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Face Generator - Neyrotarmoq</title>
+...
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0f0c20; color: white; text-align: center; margin: 0; padding: 20px; }
@@ -108,7 +111,14 @@ async function startAI() {
     const canvas = document.getElementById('canvas');
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+    video: { 
+        facingMode: "user", // Old kamerani ochish
+        width: { ideal: 640 }, // Telefon tez ishlashi uchun piksellar soni
+        height: { ideal: 480 } 
+    }, 
+    audio: false 
+});
         video.srcObject = stream;
         globalStream = stream;
 
